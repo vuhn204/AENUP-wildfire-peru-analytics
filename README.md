@@ -1,6 +1,6 @@
 # AENUP Wildfire Peru Analytics 🔥🇵🇪
 
-Un pipeline integral de análisis de datos geoespaciales y temporales diseñado para procesar, limpiar y visualizar información satelital sobre incendios forestales en Perú.
+Un pipeline integral de análisis de datos geoespaciales y temporales diseñado para procesar, limpiar y visualizar información satelital sobre incendios forestales en Perú, con un dashboard interactivo construido en Streamlit.
 
 ---
 
@@ -25,81 +25,91 @@ El FRP (Poder Radiativo del Fuego) es una variable crucial en nuestros datos. Se
 
 ## ⚙️ Documentación del Proyecto
 
-El código está estructurado de manera modular para transformar datos satelitales crudos en información lista para toma de decisiones y reportes.
+El código está estructurado de manera modular para transformar datos satelitales crudos en información lista para toma de decisiones y reportes, servida a través de un dashboard interactivo.
 
 ### Estructura de Directorios
 
 ```text
 AENUP-wildfire-peru-analytics/
 │
+├── app.py                    # Punto de entrada del dashboard (página principal)
+├── pages/                    # Páginas adicionales del dashboard Streamlit
+│   ├── 1_Tendencias.py
+│   ├── 2_Mapas.py
+│   ├── 3_Analisis_FRP.py
+│   └── 4_Metodologia.py
+│
 ├── data/
-│   ├── raw/                 # Archivos originales de la NASA (modis_archive.csv, viirs_archive.csv)
-│   └── processed/           # Datasets limpios y resúmenes estadísticos (generados automáticamente)
+│   ├── raw/                  # Archivos originales de la NASA (no versionados en git)
+│   └── processed/            # Dataset limpio en formato Parquet (generado automáticamente)
 │
-├── outputs/
-│   ├── figures/             # Gráficos estáticos PNG (tendencias, estacionalidad, distribuciones)
-│   └── maps/                # Mapas interactivos HTML generados con Folium
+├── src/                      # Código fuente del pipeline (ETL)
+│   ├── etl.py                # Orquesta la limpieza + feature engineering + exportación
+│   ├── cleaning.py           # Lógica de estandarización y limpieza
+│   ├── features.py           # Ingeniería de características (momentos del día, niveles de severidad)
+│   └── analysis.py           # Agregaciones estadísticas
 │
-├── src/                     # Código fuente del pipeline
-│   ├── main.py              # Script principal que orquesta el pipeline
-│   ├── cleaning.py          # Lógica de estandarización y limpieza
-│   ├── features.py          # Ingeniería de características (momentos del día, niveles de severidad)
-│   ├── analysis.py          # Agregaciones estadísticas
-│   ├── plots.py             # Generación de gráficos estáticos con Matplotlib y Seaborn
-│   └── maps.py              # Generación de mapas geoespaciales interactivos
+├── .streamlit/
+│   └── config.toml           # Tema visual del dashboard
 │
-└── requirements.txt         # Lista de dependencias del entorno
+└── requirements.txt           # Lista de dependencias del entorno
 ```
 
+> **Nota:** `data/raw/` y `data/processed/` no se versionan en git (ver `.gitignore`). Debes colocar tus propios archivos `modis_archive.csv` y `viirs_archive.csv` en `data/raw/` antes de correr el pipeline.
+
 ### Funcionalidades del Pipeline
-1. **Limpieza Uniforme:** Homologa la confianza (Confidence) de MODIS (numérica) y VIIRS (letras) en una única escala (`Low`, `Medium`, `High`), eliminando anomalías sin coordenadas.
+1. **Limpieza Uniforme:** Homologa la confianza (Confidence) de MODIS (numérica) y VIIRS (letras) en una única escala (`Low`, `Medium`, `High`), eliminando registros sin coordenadas.
 2. **Feature Engineering:** Deriva variables de temporalidad (año, mes, momento del día) y categoriza el nivel de gravedad basándose en el FRP y el Brightness (Brillo).
-3. **Análisis Estadístico:** Genera reportes por año, mes y nivel de severidad.
-4. **Visualización Estática:** Exporta gráficas en PNG útiles para reportes técnicos.
-5. **Análisis Geoespacial:** Exporta mapas web de calor (Heatmaps) y mapas de clústeres dinámicos.
-6. **Dashboard Interactivo:** Proveemos una aplicación web construida con Streamlit que te permite filtrar e interactuar con los datos visualmente.
+3. **Exportación a Parquet:** El dataset combinado y limpio se guarda en `data/processed/combined_clean.parquet`, listo para ser consumido por el dashboard.
+4. **Dashboard Interactivo:** Aplicación web multipágina construida con Streamlit, Plotly y pydeck que permite filtrar y explorar 1.4+ millones de registros visualmente — sin generar archivos estáticos.
 
 ### Instalación y Ejecución
 
 1. Asegúrate de tener Python instalado (probado en Python 3.10+).
 2. Se recomienda crear un entorno virtual:
-   ```bash
+```bash
    python -m venv .venv
-   ```
+```
 3. Activar el entorno virtual:
    - En Windows: `.\.venv\Scripts\Activate.ps1`
    - En Mac/Linux: `source .venv/bin/activate`
 4. Instalar las dependencias:
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. Ejecutar el pipeline completo:
-   ```bash
-   python src/main.py
-   ```
-
-Una vez que el script finaliza ("Proceso terminado sin errores"), puedes encontrar los CSV limpios en `data/processed/`, las gráficas en `outputs/figures/`, y abrir los mapas interactivos ubicados en `outputs/maps/` usando cualquier navegador web.
-
-### 📊 Despliegue del Dashboard Interactivo
-
-Hemos construido una aplicación web de alto rendimiento utilizando **Streamlit** y **Plotly** para reemplazar los gráficos estáticos por interactivos. El dashboard incluye:
-- **Filtros Laterales:** Permite segmentar 1.4 millones de registros por Año, Mes, Sensor y Gravedad.
-- **KPIs en Tiempo Real:** Métricas que se actualizan dinámicamente según tus filtros.
-- **Visualizaciones Interactivas:** Gráficos de tendencias temporales y distribución por nivel de FRP.
-- **Mapa Geoespacial Integrado:** Para evitar que el navegador se congele, el mapa aplica automáticamente un límite inteligente: si los filtros seleccionados agrupan más de 50,000 puntos, renderizará un muestreo aleatorio uniforme para mantener la web fluida (mientras que los KPIs sí calculan el 100% de la data).
-- **Tema Oscuro Persistente:** Interfaz diseñada con colores y fondos optimizados.
-
-#### ¿Cómo ejecutarlo?
-
-Si deseas explorar los datos, ejecuta el siguiente comando teniendo tu entorno virtual activado:
-
 ```bash
-streamlit run src/dashboard.py
+   pip install -r requirements.txt
+```
+5. Coloca `modis_archive.csv` y `viirs_archive.csv` dentro de `data/raw/`.
+6. Ejecutar el pipeline (limpieza + feature engineering + exportación a Parquet):
+```bash
+   python -m src.etl
 ```
 
-> **Nota sobre el primer inicio:** 
+Al finalizar, verás en la terminal el conteo de registros procesados por sensor y encontrarás el dataset limpio en `data/processed/combined_clean.parquet`.
+
+---
+
+## 📊 Despliegue del Dashboard Interactivo
+
+El dashboard está construido con **Streamlit**, **Plotly** y **pydeck**, organizado en múltiples páginas:
+
+- **Página principal (`app.py`):** filtros globales (Año, Sensor, Nivel FRP) y KPIs en tiempo real.
+- **📈 Tendencias:** incendios por año y por mes, comparando sensores.
+- **🗺️ Mapas:** mapa de calor y mapa de puntos individuales sobre Perú, renderizados en memoria con pydeck (sin generar archivos HTML).
+- **🔥 Análisis FRP:** distribución de severidad y comparación de detecciones día/noche.
+- **ℹ️ Metodología:** documentación de fuentes de datos y variables.
+
+Todas las páginas comparten los mismos filtros a través de `st.session_state`, así que cualquier cambio en la página principal se refleja automáticamente en las demás.
+
+### ¿Cómo ejecutarlo?
+
+Con el pipeline ya ejecutado (paso anterior) y el entorno virtual activo:
+
+```bash
+streamlit run app.py
+```
+
+> **Nota sobre el primer inicio:**
 > La primera vez que ejecutes Streamlit en tu computadora, es posible que la terminal te muestre el siguiente mensaje:
 > `If you'd like to receive helpful onboarding emails... Please enter your email address below.`
 > **No es necesario ingresar ningún correo**. Simplemente deja el espacio en blanco, presiona la tecla **Enter** (Intro) y la aplicación continuará cargando.
 
-Tu navegador se abrirá automáticamente (usualmente en `http://localhost:8501`) mostrando el panel de control interactivo.
+Tu navegador se abrirá automáticamente (usualmente en `http://localhost:8501`) mostrando el panel de control interactivo, con el menú de páginas visible en la barra lateral.
