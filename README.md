@@ -55,7 +55,7 @@ AENUP-wildfire-peru-analytics/
 └── requirements.txt           # Lista de dependencias del entorno
 ```
 
-> **Nota:** `data/raw/` y `data/processed/` no se versionan en git (ver `.gitignore`). Debes colocar tus propios archivos `modis_archive.csv` y `viirs_archive.csv` en `data/raw/` antes de correr el pipeline.
+> **Nota:** `data/raw/` y `data/processed/` no se versionan en git (ver .gitignore) por su peso. Los archivos originales están disponibles en este enlace de Drive (https://drive.google.com/drive/folders/1VZ9ue0YI-T_Ki3r7sU-L6a1ByHSl4lf1?usp=sharing) — colócalos en data/raw/ antes de ejecutar el pipeline.
 
 ### Funcionalidades del Pipeline
 1. **Limpieza Uniforme:** Homologa la confianza (Confidence) de MODIS (numérica) y VIIRS (letras) en una única escala (`Low`, `Medium`, `High`), eliminando registros sin coordenadas.
@@ -77,7 +77,8 @@ AENUP-wildfire-peru-analytics/
 ```bash
    pip install -r requirements.txt
 ```
-5. Coloca `modis_archive.csv` y `viirs_archive.csv` dentro de `data/raw/`.
+5. Descarga los datos crudos (modis_archive.csv y viirs_archive.csv) desde este enlace de Google Drive (https://drive.google.com/drive/folders/1VZ9ue0YI-T_Ki3r7sU-L6a1ByHSl4lf1?usp=sharing) y colócalos dentro de data/raw/.
+(Los datos provienen originalmente de NASA FIRMS, filtrados para Perú y los sensores MODIS/VIIRS.)
 6. Ejecutar el pipeline (limpieza + feature engineering + exportación a Parquet):
 ```bash
    python -m src.etl
